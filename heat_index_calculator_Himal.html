@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Heat Index Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Merriweather', Georgia, serif;
+      background-color: #ffffff;
+      color: #1a1a1a;
+      max-width: 680px;
+      margin: 40px auto;
+      padding: 40px 24px;
+      line-height: 1.7;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #c32f27;
+      padding-bottom: 8px;
+      color: #c32f27;
+    }
+
+    label {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 25px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 2px;
+      background-color: #f9f9f9;
+      box-sizing: border-box;
+    }
+
+    .output {
+      margin-top: 35px;
+      padding: 20px;
+      background-color: #f5f5f5;
+      border-left: 4px solid #c32f27;
+      font-size: 1.15rem;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .emoji {
+      font-size: 1.8rem;
+    }
+
+    .risk {
+      font-size: 1rem;
+      font-weight: normal;
+      color: #444;
+      font-style: italic;
+    }
+
+    .disclaimer {
+      margin-top: 30px;
+      font-size: 0.85rem;
+      color: #555;
+      font-style: italic;
+    }
+
+    .explain-toggle {
+      margin-top: 30px;
+      font-size: 0.95rem;
+      background: none;
+      border: none;
+      color: #c32f27;
+      text-decoration: underline;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 15px;
+      background-color: #f1f1f1;
+      padding: 20px;
+      border-left: 3px solid #999;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 30px 16px;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Heat Index Calculator</h1>
+
+  <label for="temperature">Air Temperature</label>
+  <input type="number" id="temperature" placeholder="e.g. 34" autofocus />
+
+  <label for="unit">Unit</label>
+  <select id="unit">
+    <option value="C">°C (Celsius)</option>
+    <option value="F">°F (Fahrenheit)</option>
+  </select>
+
+  <label for="humidity">Relative Humidity (%)</label>
+  <input type="number" id="humidity" placeholder="e.g. 65" />
+
+  <div class="output" id="result">
+    <span id="displayText">Enter values to calculate heat index.</span>
+    <span class="emoji" id="emoji">🌤️</span>
+    <span class="risk" id="riskText"></span>
+  </div>
+
+  <div class="disclaimer">
+    This calculator is for demonstrative purposes only and does not replace official advisories or medical guidance.
+  </div>
+
+  <button class="explain-toggle" onclick="toggleExplanation()">How was this calculated?</button>
+  <div class="explanation" id="explanationBox">
+    <strong>Formula:</strong><br>
+    This tool uses the <em>National Weather Service (NOAA)</em> regression formula for computing the Heat Index in Fahrenheit:<br><br>
+    <code>
+      HI = c₁ + c₂T + c₃RH + c₄TRH + c₅T² + c₆RH² + c₇T²RH + c₈TRH² + c₉T²RH²
+    </code><br><br>
+    Where:
+    <ul>
+      <li><strong>T</strong> = Temperature (°F)</li>
+      <li><strong>RH</strong> = Relative Humidity (%)</li>
+    </ul>
+
+    <strong>Note:</strong><br>
+    The NOAA formula is only accurate when:
+    <ul>
+      <li>Temperature is <strong>≥ 80°F</strong> (≈27°C)</li>
+      <li>Relative Humidity is <strong>≥ 40%</strong></li>
+    </ul>
+    If conditions are outside this range, the calculator assumes the heat index is approximately equal to the air temperature.
+  </div>
+
+  <script>
+    const tempInput = document.getElementById('temperature');
+    const humidityInput = document.getElementById('humidity');
+    const unitSelect = document.getElementById('unit');
+    const displayText = document.getElementById('displayText');
+    const emojiSpan = document.getElementById('emoji');
+    const riskText = document.getElementById('riskText');
+    const explanationBox = document.getElementById('explanationBox');
+
+    function calculateHeatIndex(T, RH) {
+      const tempF = unitSelect.value === 'C' ? (T * 9/5) + 32 : T;
+
+      const c1 = -42.379, c2 = 2.04901523, c3 = 10.14333127,
+            c4 = -0.22475541, c5 = -6.83783e-3, c6 = -5.481717e-2,
+            c7 = 1.22874e-3, c8 = 8.5282e-4, c9 = -1.99e-6;
+
+      const HI = c1 + (c2 * tempF) + (c3 * RH) + (c4 * tempF * RH) +
+                 (c5 * Math.pow(tempF, 2)) + (c6 * Math.pow(RH, 2)) +
+                 (c7 * Math.pow(tempF, 2) * RH) + (c8 * tempF * Math.pow(RH, 2)) +
+                 (c9 * Math.pow(tempF, 2) * Math.pow(RH, 2));
+
+      return unitSelect.value === 'C' ? ((HI - 32) * 5/9) : HI;
+    }
+
+    function getHeatEmoji(hiC) {
+      if (hiC < 27) return "🌤️";
+      if (hiC < 32) return "🌞";
+      if (hiC < 41) return "🥵";
+      return "🔥";
+    }
+
+    function getRiskLevel(hiC) {
+      if (hiC < 27) return "Comfortable";
+      if (hiC < 32) return "Caution: Fatigue possible with prolonged exposure.";
+      if (hiC < 41) return "Extreme Caution: Heat cramps or exhaustion likely.";
+      return "Danger: Heatstroke highly probable with extended exposure.";
+    }
+
+    function updateHeatIndex() {
+      const temp = parseFloat(tempInput.value);
+      const rh = parseFloat(humidityInput.value);
+      const unit = unitSelect.value;
+
+      if (!isNaN(temp) && !isNaN(rh) && rh >= 0 && rh <= 100) {
+        let hi;
+        let hiDisplay = "";
+        let hiC;
+
+        const tempF = unit === "C" ? (temp * 9/5) + 32 : temp;
+
+        if (tempF >= 80 && rh >= 40) {
+          hi = calculateHeatIndex(temp, rh);
+          hiC = unit === "F" ? (hi - 32) * 5/9 : hi;
+          hiDisplay = `Feels like: <strong>${hi.toFixed(1)}°${unit}</strong>`;
+        } else {
+          hiC = unit === "C" ? temp : (temp - 32) * 5/9;
+          hiDisplay = `Feels like: <strong>≈ ${temp.toFixed(1)}°${unit}</strong><br><span style="font-weight: normal; font-size: 0.95rem;">(At this temperature, heat index is approximately equal to air temperature.)</span>`;
+        }
+
+        displayText.innerHTML = hiDisplay;
+        emojiSpan.textContent = getHeatEmoji(hiC);
+        riskText.textContent = getRiskLevel(hiC);
+      } else {
+        displayText.textContent = "Please enter valid temperature and humidity.";
+        emojiSpan.textContent = "🌤️";
+        riskText.textContent = "";
+      }
+    }
+
+    function toggleExplanation() {
+      explanationBox.style.display = explanationBox.style.display === "block" ? "none" : "block";
+    }
+
+    tempInput.addEventListener('input', updateHeatIndex);
+    humidityInput.addEventListener('input', updateHeatIndex);
+    unitSelect.addEventListener('change', updateHeatIndex);
+  </script>
+
+</body>
+</html>
